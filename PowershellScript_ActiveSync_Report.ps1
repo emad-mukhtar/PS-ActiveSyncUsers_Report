@@ -1,3 +1,5 @@
+#Visit my github page for more scripts like this one https://github.com/emad-mukhtar
+
 # Prompt the user to enter the server name
 $ServerName = Read-Host "Enter the server name"
 
@@ -56,4 +58,3 @@ Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInformation
 # Disconnect from the Exchange server
 Disconnect-ExchangeServer -Confirm:$false
 
-#Visit my github page for more scripts like this one https://github.com/emad-mukhtar
