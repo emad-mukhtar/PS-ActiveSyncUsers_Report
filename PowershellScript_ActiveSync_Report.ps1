@@ -46,7 +46,6 @@ foreach ($Device in $EnabledDevices) {
     'Device Type' = $Device.DeviceType
     'First Sync' = $Device.FirstSyncTime
     }
-
     # Add the object to the report array
     $Report += New-Object -TypeName PSObject -Property $Properties
 }
@@ -54,10 +53,11 @@ foreach ($Device in $EnabledDevices) {
 # Get the current date and time in the specified format
 $Date = Get-Date -Format yyyyMMdd_HHmmss
 
-# Add the Comment to the top of the exported report
-$Report |  Select-Object -Property 'https://github.com/emad-mukhtar',* |
 # Export the report array to a CSV file with the specified save location, file name, and date format
-Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInformation
+$Report | Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInformation
 
 # Disconnect from the Exchange server
 Disconnect-ExchangeServer -Confirm:$false
+
+# Show the message of report saved successfully on the location
+Write-Host "Report saved successfully on $SaveLocation"
