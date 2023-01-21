@@ -5,7 +5,7 @@ $Comment = "Thank you for using my script, check my github page for more https:/
 Write-Host $Comment
 
 # Prompt the user to enter the server name
-$ServerName = Read-Host "Enter the server FQDN name"
+$ServerName = Read-Host "Enter the MS Exchange server FQDN name"
 
 # Prompt the user to enter credentials
 $Credentials = Get-Credential
