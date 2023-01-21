@@ -60,4 +60,4 @@ $Report | Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInf
 Disconnect-ExchangeServer -Confirm:$false
 
 # Show the message of report saved successfully on the location
-Write-Host "Report saved successfully on $SaveLocation"
+Write-Host "Script Completed! Check the report on $SaveLocation"
