@@ -1,7 +1,11 @@
-#Visit my github page for more scripts like this one https://github.com/emad-mukhtar
+# Set the comment as a variable
+$Comment = "Thank you for using my script, check my github page for more https://github.com/emad-mukhtar"
+
+# Show the comment in the console
+Write-Host $Comment
 
 # Prompt the user to enter the server name
-$ServerName = Read-Host "Enter the server name"
+$ServerName = Read-Host "Enter the server FQDN name"
 
 # Prompt the user to enter credentials
 $Credentials = Get-Credential
@@ -51,10 +55,9 @@ foreach ($Device in $EnabledDevices) {
 $Date = Get-Date -Format yyyyMMdd_HHmmss
 
 # Add the Comment to the top of the exported report
-$Report |  Select-Object -Property '#Visit my github page for more scripts like this one https://github.com/emad-mukhtar',* |
+$Report |  Select-Object -Property 'https://github.com/emad-mukhtar',* |
 # Export the report array to a CSV file with the specified save location, file name, and date format
 Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInformation
 
 # Disconnect from the Exchange server
 Disconnect-ExchangeServer -Confirm:$false
-
