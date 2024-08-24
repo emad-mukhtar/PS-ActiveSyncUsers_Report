@@ -1,63 +1,104 @@
-# Set the comment as a variable
-$Comment = "Thank you for using my script, check my github page for more https://github.com/emad-mukhtar"
+# Exchange ActiveSync Report Generator
+# Author: Emad Mukhtar (https://github.com/emad-mukhtar)
 
-# Show the comment in the console
-Write-Host $Comment
-
-# Prompt the user to enter the server name
-$ServerName = Read-Host "Enter the MS Exchange server FQDN name"
-
-# Prompt the user to enter credentials
-$Credentials = Get-Credential
-
-# Connect to the specified Exchange server using the provided credentials
-Connect-ExchangeServer -Server $ServerName -Credential $Credentials
-
-# Prompt the user to enter a save location for the report
-$SaveLocation = Read-Host "Enter the save location for the report (e.g. C:\Reports)"
-
-# Check if the Save Location directory exists
-if (!(Test-Path -Path $SaveLocation -PathType Container)) {
-    # Prompt the user to create the directory if it doesn't exist
-    $create = Read-Host "The directory $SaveLocation does not exist, would you like to create it? (Y/N)"
-    if ($create -eq "Y" -or $create -eq "y") {
-        New-Item -ItemType Directory -Path $SaveLocation
-    } else {
-        Write-Host "The script will now exit"
-        Exit
+# Function to test Exchange connection
+function Test-ExchangeConnection {
+    try {
+        Get-ExchangeServer -ErrorAction Stop | Out-Null
+        return $true
+    }
+    catch {
+        return $false
     }
 }
 
-# Retrieve all mobile devices configured in the Exchange server
-$Devices = Get-MobileDevice
+# Function to ensure valid directory path
+function Get-ValidDirectory {
+    param ([string]$prompt)
+    do {
+        $path = Read-Host $prompt
+        if (!(Test-Path -Path $path -PathType Container)) {
+            $create = Read-Host "The directory $path does not exist. Create it? (Y/N)"
+            if ($create -eq "Y" -or $create -eq "y") {
+                New-Item -ItemType Directory -Path $path | Out-Null
+            }
+            else {
+                Write-Host "Please provide a valid directory path."
+                $path = $null
+            }
+        }
+    } while (!$path)
+    return $path
+}
 
-# Filter the retrieved devices to only include those with an "Allowed" device access state
-$EnabledDevices = $Devices | Where-Object {$_.DeviceAccessState -eq 'Allowed'}
+# Set the comment as a variable
+$Comment = "Thank you for using my script. Check my GitHub page for more: https://github.com/emad-mukhtar"
 
-# Initialize an empty array to store the report
+# Show the comment in the console
+Write-Host $Comment -ForegroundColor Cyan
+
+# Prompt for server name and credentials
+$ServerName = Read-Host "Enter the MS Exchange server FQDN name"
+$Credentials = Get-Credential -Message "Enter your Exchange admin credentials"
+
+# Connect to Exchange server
+try {
+    Connect-ExchangeServer -Server $ServerName -Credential $Credentials -ErrorAction Stop
+    Write-Host "Successfully connected to Exchange server." -ForegroundColor Green
+}
+catch {
+    Write-Host "Failed to connect to Exchange server: $_" -ForegroundColor Red
+    exit
+}
+
+# Verify Exchange connection
+if (-not (Test-ExchangeConnection)) {
+    Write-Host "Failed to establish a connection to Exchange." -ForegroundColor Red
+    exit
+}
+
+# Get valid save location
+$SaveLocation = Get-ValidDirectory "Enter the save location for the report (e.g., C:\Reports)"
+
+# Retrieve and filter mobile devices
+try {
+    $Devices = Get-MobileDevice -ErrorAction Stop
+    $EnabledDevices = $Devices | Where-Object {$_.DeviceAccessState -eq 'Allowed'}
+    Write-Host "Retrieved $(($EnabledDevices | Measure-Object).Count) enabled devices." -ForegroundColor Green
+}
+catch {
+    Write-Host "Error retrieving mobile devices: $_" -ForegroundColor Red
+    exit
+}
+
+# Generate report
 $Report = @()
-
-# Loop through each enabled device
 foreach ($Device in $EnabledDevices) {
-    # Create an object with the specified properties
     $Properties = @{
-    'User Principal Name' = $Device.UserDisplayName
-    'Device ID' = $Device.DeviceId
-    'Device Type' = $Device.DeviceType
-    'First Sync' = $Device.FirstSyncTime
+        'User Principal Name' = $Device.UserDisplayName
+        'Device ID' = $Device.DeviceId
+        'Device Type' = $Device.DeviceType
+        'First Sync' = $Device.FirstSyncTime
+        'Last Sync' = $Device.LastSuccessSync
+        'Device OS' = $Device.DeviceOS
+        'Device Model' = $Device.DeviceModel
     }
-    # Add the object to the report array
     $Report += New-Object -TypeName PSObject -Property $Properties
 }
 
-# Get the current date and time in the specified format
+# Export report
 $Date = Get-Date -Format yyyyMMdd_HHmmss
+$ReportPath = Join-Path $SaveLocation "ActiveSyncReport_$Date.csv"
+try {
+    $Report | Export-Csv -Path $ReportPath -NoTypeInformation -ErrorAction Stop
+    Write-Host "Report successfully saved to: $ReportPath" -ForegroundColor Green
+}
+catch {
+    Write-Host "Error saving report: $_" -ForegroundColor Red
+}
 
-# Export the report array to a CSV file with the specified save location, file name, and date format
-$Report | Export-Csv -Path "$SaveLocation\ActiveSyncReport $Date.csv" -NoTypeInformation
-
-# Disconnect from the Exchange server
+# Disconnect from Exchange server
 Disconnect-ExchangeServer -Confirm:$false
+Write-Host "Disconnected from Exchange server." -ForegroundColor Green
 
-# Show the message of report saved successfully on the location
-Write-Host "Script Completed! Check the report on $SaveLocation"
+Write-Host "Script completed. Thank you for using this tool!" -ForegroundColor Cyan
